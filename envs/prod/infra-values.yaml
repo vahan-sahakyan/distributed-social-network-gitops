@@ -1,0 +1,11 @@
+# credentials come from envs/prod/secrets
+devSecrets: {}
+
+postgres:
+  storage: 2Gi
+scylla:
+  storage: 5Gi
+clickhouse:
+  storage: 10Gi
+minio:
+  storage: 20Gi

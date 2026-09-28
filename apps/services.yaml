@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: services
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  sources:
+    # chart at the same app repo commit the images were built from; CI bumps both
+    - repoURL: https://github.com/vahan-sahakyan/distributed-social-network.git
+      targetRevision: c36c28c34fb40a9bd7c4f1ac55384e291ebb416e
+      path: deploy/kubernetes/services
+      helm:
+        valueFiles:
+          - $values/envs/prod/services-values.yaml
+    - repoURL: https://github.com/vahan-sahakyan/distributed-social-network-gitops.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dsn
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
