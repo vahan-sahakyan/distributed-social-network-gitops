@@ -1,5 +1,5 @@
 # credentials come from envs/prod/secrets
-devSecrets: {}
+createDevSecrets: false
 
 postgres:
   storage: 2Gi
