@@ -11,7 +11,7 @@ spec:
   sources:
     # local only for now; CI pins it to each main commit like the other apps
     - repoURL: https://github.com/vahan-sahakyan/distributed-social-network.git
-      targetRevision: ed90900bee54a61008cbf3ebb9d1c08900e4a197
+      targetRevision: ad474db347cff5ef224cfee7be48950fef791d89
       path: deploy/kubernetes/observability
       helm:
         valueFiles:

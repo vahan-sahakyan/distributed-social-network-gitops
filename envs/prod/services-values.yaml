@@ -1,6 +1,6 @@
 image:
   # app repo commit, bumped by its publish workflow
-  tag: ed90900bee54a61008cbf3ebb9d1c08900e4a197
+  tag: ad474db347cff5ef224cfee7be48950fef791d89
 # credentials come from envs/prod/secrets
 createDevSecrets: false
 ingress:
