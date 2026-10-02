@@ -1,2 +1,5 @@
 # layered on envs/prod/services-values.yaml, which pins the image tag
 createDevSecrets: true
+
+# traces to the jaeger from the observability app
+otelEndpoint: http://jaeger:4318

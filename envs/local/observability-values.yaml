@@ -1,0 +1,3 @@
+# chart defaults fit local: plain grafana admin/admin, UIs on <name>.localhost:8081
+kibana:
+  enabled: false

@@ -19,7 +19,7 @@ Rollback = `git revert` the deploy commit.
 |---|---|
 | `bootstrap/root.yaml` | app of apps, the only manifest applied by hand |
 | `apps/` | one Argo CD Application per component |
-| `bootstrap/root-local.yaml`, `apps-local/` | the same for a local k3d cluster: infra and services only |
+| `bootstrap/root-local.yaml`, `apps-local/` | the same for a local k3d cluster: infra, services and observability |
 | `platform/` | cluster-wide resources (Let's Encrypt issuer) |
 | `envs/prod/*-values.yaml` | prod overrides for the app repo charts |
 | `envs/local/*-values.yaml` | local overrides, layered on top of prod's |
@@ -74,4 +74,4 @@ make cluster-up     # in the app repo: k3d, Argo CD, bootstrap/root-local.yaml
 make argocd-ui      # https://localhost:8443
 make cluster-down
 ```
-`apps-local/` deploys only infra and services, with `envs/local` values on top of `envs/prod`: plain dev secrets instead of SealedSecrets (no sealing key needed), Keycloak redirects to http://localhost:8081, no TLS. The publish workflow bumps `apps-local/` along with `apps/`. The app is served on http://localhost:8081.
+`apps-local/` deploys infra, services and observability (Grafana, Prometheus, Loki, Jaeger, Redpanda Console on `<name>.localhost:8081`), with `envs/local` values on top of `envs/prod`: plain dev secrets instead of SealedSecrets (no sealing key needed), Keycloak redirects to http://localhost:8081, no TLS. The publish workflow bumps `apps-local/` along with `apps/`. The app is served on http://localhost:8081.
