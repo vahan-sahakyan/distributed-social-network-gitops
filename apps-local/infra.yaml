@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
+spec:
+  project: default
+  sources:
+    # same app repo commit as prod, CI bumps both; local values layer on top of prod's
+    - repoURL: https://github.com/vahan-sahakyan/distributed-social-network.git
+      targetRevision: 202d2852f5e71f9c55fad5793dccd5bfb74d316c
+      path: deploy/kubernetes/infra
+      helm:
+        valueFiles:
+          - $values/envs/prod/infra-values.yaml
+          - $values/envs/local/infra-values.yaml
+    - repoURL: https://github.com/vahan-sahakyan/distributed-social-network-gitops.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dsn
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

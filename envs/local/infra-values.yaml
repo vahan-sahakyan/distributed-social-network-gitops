@@ -1,0 +1,5 @@
+# layered on envs/prod/infra-values.yaml; no sealing key locally, so plain secrets
+createDevSecrets: true
+
+keycloak:
+  uiUrl: http://localhost:8081

@@ -1,0 +1,19 @@
+# app of apps for a local k3d cluster (make cluster-up in the app repo)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root-local
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/vahan-sahakyan/distributed-social-network-gitops.git
+    targetRevision: main
+    path: apps-local
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -19,8 +19,10 @@ Rollback = `git revert` the deploy commit.
 |---|---|
 | `bootstrap/root.yaml` | app of apps, the only manifest applied by hand |
 | `apps/` | one Argo CD Application per component |
+| `bootstrap/root-local.yaml`, `apps-local/` | the same for a local k3d cluster: infra and services only |
 | `platform/` | cluster-wide resources (Let's Encrypt issuer) |
 | `envs/prod/*-values.yaml` | prod overrides for the app repo charts |
+| `envs/local/*-values.yaml` | local overrides, layered on top of prod's |
 | `envs/prod/secrets/` | SealedSecrets, safe to commit |
 | `sealed-secrets/pub-cert.pem` | public cert for sealing |
 
@@ -64,10 +66,12 @@ kubectl create secret generic <name> -n dsn --from-literal=KEY=value --dry-run=c
   | kubeseal --cert sealed-secrets/pub-cert.pem --format yaml > envs/prod/secrets/<name>.yaml
 ```
 
-## Local rehearsal
+## Local cluster
 
-Same bootstrap on k3d:
+A k3d cluster synced from this repo, running the same commit as prod:
 ```sh
-k3d cluster create dsn -p "8081:80@loadbalancer"
+make cluster-up     # in the app repo: k3d, Argo CD, bootstrap/root-local.yaml
+make argocd-ui      # https://localhost:8443
+make cluster-down
 ```
-then steps 3-4. The app is served on http://localhost:8081.
+`apps-local/` deploys only infra and services, with `envs/local` values on top of `envs/prod`: plain dev secrets instead of SealedSecrets (no sealing key needed), Keycloak redirects to http://localhost:8081, no TLS. The publish workflow bumps `apps-local/` along with `apps/`. The app is served on http://localhost:8081.
