@@ -11,7 +11,7 @@ spec:
   sources:
     # chart at the same app repo commit the images were built from; CI bumps both
     - repoURL: https://github.com/vahan-sahakyan/distributed-social-network.git
-      targetRevision: 5a812fee45dee479c353c1c67a09cbec9398e610
+      targetRevision: 1f822c4b402f9da3845ffa6e8ff6fce5a3dcd742
       path: deploy/kubernetes/infra
       helm:
         valueFiles:
