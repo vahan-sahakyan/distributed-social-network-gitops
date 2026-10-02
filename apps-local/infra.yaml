@@ -11,7 +11,7 @@ spec:
   sources:
     # same app repo commit as prod, CI bumps both; local values layer on top of prod's
     - repoURL: https://github.com/vahan-sahakyan/distributed-social-network.git
-      targetRevision: 1f822c4b402f9da3845ffa6e8ff6fce5a3dcd742
+      targetRevision: 78c1dd895b3cf565378db288c9aeafc3701a979f
       path: deploy/kubernetes/infra
       helm:
         valueFiles:
