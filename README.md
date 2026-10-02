@@ -71,7 +71,7 @@ kubectl create secret generic <name> -n dsn --from-literal=KEY=value --dry-run=c
 A k3d cluster synced from this repo, running the same commit as prod:
 ```sh
 make cluster-up     # in the app repo: k3d, Argo CD, bootstrap/root-local.yaml
-make argocd-ui      # https://localhost:8443
+make forward        # compose's localhost ports + Argo CD on https://localhost:8443
 make cluster-down
 ```
 `apps-local/` deploys infra, services and observability (Grafana, Prometheus, Loki, Jaeger, Redpanda Console on `<name>.localhost:8081`), with `envs/local` values on top of `envs/prod`: plain dev secrets instead of SealedSecrets (no sealing key needed), Keycloak redirects to http://localhost:8081, no TLS. The publish workflow bumps `apps-local/` along with `apps/`. The app is served on http://localhost:8081.
