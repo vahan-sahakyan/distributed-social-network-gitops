@@ -3,3 +3,9 @@ createDevSecrets: true
 
 # traces to the jaeger from the observability app
 otelEndpoint: http://jaeger:4318
+
+services:
+  gateway:
+    env:
+      # POST /api/v1/reset (the UI's "Reset everything"): truncates every service's data
+      ALLOW_RESET: "true"
