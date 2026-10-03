@@ -26,6 +26,12 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    # the first app in dsn sets its labels: every pod runs under Pod Security "restricted"
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: restricted
+        pod-security.kubernetes.io/warn: restricted
+        pod-security.kubernetes.io/audit: restricted
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
