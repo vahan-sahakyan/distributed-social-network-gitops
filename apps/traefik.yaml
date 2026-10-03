@@ -1,0 +1,21 @@
+# gateway api provider for k3s's bundled traefik
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/vahan-sahakyan/distributed-social-network-gitops.git
+    targetRevision: main
+    path: platform-k3s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

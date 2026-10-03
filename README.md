@@ -51,7 +51,7 @@ Target: one Oracle Cloud Always Free Ampere A1 VM (4 OCPU, 24 GB, Ubuntu 24.04 a
    kubectl apply -n argocd --server-side -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.3/manifests/install.yaml
    kubectl apply -f bootstrap/root.yaml
    ```
-5. DNS: point a hostname at the VM, set `ingress.host` and `ingress.tls: true` in `envs/prod/services-values.yaml`.
+5. DNS: point a hostname at the VM, set `route.host`, `route.tls: true` and `publicUrl` in `envs/prod/services-values.yaml`; cert-manager issues the certificate through the `dsn` Gateway.
 
 Argo CD UI (not exposed publicly):
 ```sh

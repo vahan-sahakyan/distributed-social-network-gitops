@@ -1,6 +1,11 @@
 # layered on envs/prod/services-values.yaml, which pins the image tag
 createDevSecrets: true
 
+# the app on localhost:8081, the UIs on <name>.localhost:8081
+route:
+  host: localhost
+publicUrl: http://localhost:8081
+
 # traces to the jaeger from the observability app
 otelEndpoint: http://jaeger:4318
 
