@@ -1,10 +1,9 @@
 # optional groups, off unless switched on per cluster: make cluster-up / cluster-profile
 # in the app repo (OBS=1 TOOLS=1 SEARCH=1 EVENTS=1, ALL=1) set them on the hand-applied
 # root-local app, so toggling needs no commit
-obs: false      # prometheus, grafana, loki, alloy, jaeger; services export traces
-tools: false    # redpanda console, and kibana when search is on
-search: false   # elasticsearch + search-service
-events: false   # clickhouse + event-writer + cache-rebuilder
-
+obs: false # prometheus, grafana, loki, alloy, jaeger; services export traces
+tools: false # redpanda console, and kibana when search is on
+search: false # elasticsearch + search-service
+events: false # clickhouse + event-writer + cache-rebuilder
 # app repo commit the charts come from; the publish workflow pins it on every main build
-appRevision: 805a985480e215c449c51d3c5095bb2be52773ee
+appRevision: 7c68ee0ae0bd47756e44a5ab80591be3b039a034
