@@ -1,0 +1,8 @@
+# signs with the machine's local CA; make cluster-up loads it into the dsn-local-ca secret
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: local-ca
+spec:
+  ca:
+    secretName: dsn-local-ca

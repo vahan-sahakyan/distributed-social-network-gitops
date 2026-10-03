@@ -2,4 +2,4 @@
 createDevSecrets: true
 
 keycloak:
-  uiUrl: http://localhost:8081
+  uiUrl: https://localhost:8443

@@ -19,8 +19,10 @@ Rollback = `git revert` the deploy commit.
 |---|---|
 | `bootstrap/root.yaml` | app of apps, the only manifest applied by hand |
 | `apps/` | one Argo CD Application per component |
-| `bootstrap/root-local.yaml`, `apps-local/` | the same for a local k3d cluster: infra, services and observability |
+| `bootstrap/root-local.yaml`, `apps-local/` | the same for a local k3d cluster: cert-manager, infra, services and observability |
 | `platform/` | cluster-wide resources (Let's Encrypt issuer) |
+| `platform-local/` | the local cluster's issuer (`local-ca`, signing with the machine's CA) |
+| `platform-k3s/` | Traefik's Gateway API provider, both envs |
 | `envs/prod/*-values.yaml` | prod overrides for the app repo charts |
 | `envs/local/*-values.yaml` | local overrides, layered on top of prod's |
 | `envs/prod/secrets/` | SealedSecrets, safe to commit |
@@ -74,4 +76,4 @@ make cluster-up     # in the app repo: k3d, Argo CD, bootstrap/root-local.yaml
 make forward        # compose's localhost ports + Argo CD on https://localhost:8443
 make cluster-down
 ```
-`apps-local/` deploys infra, services and observability (Grafana, Prometheus, Loki, Jaeger, Redpanda Console on `<name>.localhost:8081`), with `envs/local` values on top of `envs/prod`: plain dev secrets instead of SealedSecrets (no sealing key needed), Keycloak redirects to http://localhost:8081, no TLS. The publish workflow bumps `apps-local/` along with `apps/`. The app is served on http://localhost:8081.
+`apps-local/` deploys cert-manager, infra, services and observability (Grafana, Prometheus, Loki, Jaeger, Redpanda Console on `https://<name>.localhost:8443`), with `envs/local` values on top of `envs/prod`: plain dev secrets instead of SealedSecrets (no sealing key needed), and certificates from the `local-ca` issuer instead of Let's Encrypt. `make cluster-up` loads that CA (generated once per machine in `~/.config/dsn/`) as the `dsn-local-ca` secret, like the sealing key in prod. The publish workflow bumps `apps-local/` along with `apps/`. The app is served on https://localhost:8443; http://localhost:8081 redirects.

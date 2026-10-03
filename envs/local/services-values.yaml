@@ -1,10 +1,22 @@
 # layered on envs/prod/services-values.yaml, which pins the image tag
 createDevSecrets: true
 
-# the app on localhost:8081, the UIs on <name>.localhost:8081
+# the app on https://localhost:8443 (http://localhost:8081 redirects), the UIs on
+# <name>.localhost on either port; certificates from the machine's local CA
 route:
   host: localhost
-publicUrl: http://localhost:8081
+  tls: true
+  clusterIssuer: local-ca
+  # the observability UIs (kibana included); TLS clients reject a *.localhost wildcard
+  extraHosts:
+    - grafana.localhost
+    - prometheus.localhost
+    - jaeger.localhost
+    - redpanda.localhost
+    - minio.localhost
+    - kibana.localhost
+  httpsPort: 8443
+publicUrl: https://localhost:8443
 
 # traces to the jaeger from the observability app
 otelEndpoint: http://jaeger:4318
