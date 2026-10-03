@@ -1,4 +1,5 @@
-# app of apps for a local k3d cluster (make cluster-up in the app repo)
+# app of apps for a local k3d cluster (make cluster-up in the app repo). apps-local is a
+# Helm chart: make cluster-up / cluster-profile set its group switches here, per cluster
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

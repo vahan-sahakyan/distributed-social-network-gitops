@@ -1,4 +1,2 @@
-# chart defaults fit local: UIs on <name>.localhost
-kibana:
-  # ~1GB, Dev Tools for the search indices
-  enabled: true
+# chart defaults fit local: UIs on <name>.localhost. Which parts run (stack, redpanda
+# console, kibana) comes from the switches in apps-local/values.yaml
