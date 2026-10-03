@@ -1,5 +1,4 @@
 # layered on envs/prod/services-values.yaml, which pins the image tag
-createDevSecrets: true
 
 # the app on https://localhost:8443 (http://localhost:8081 redirects), the UIs on
 # <name>.localhost on either port; certificates from the machine's local CA

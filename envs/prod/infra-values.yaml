@@ -1,6 +1,4 @@
-# credentials come from envs/prod/secrets
-createDevSecrets: false
-
+# credentials come from OpenBao through External Secrets
 postgres:
   storage: 2Gi
 scylla:

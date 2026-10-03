@@ -1,8 +1,6 @@
 image:
   # app repo commit, bumped by its publish workflow
   tag: 0dfad884f0a5b15612be32ccff91148fc380f75d
-# credentials come from envs/prod/secrets
-createDevSecrets: false
 route:
   # set to the public hostname, then enable tls once DNS points at the node
   host: ""

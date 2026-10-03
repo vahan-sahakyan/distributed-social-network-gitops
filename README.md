@@ -19,16 +19,17 @@ Rollback = `git revert` the deploy commit.
 |---|---|
 | `bootstrap/root.yaml` | app of apps, the only manifest applied by hand |
 | `apps/` | one Argo CD Application per component |
-| `bootstrap/root-local.yaml`, `apps-local/` | the same for a local k3d cluster: cert-manager, infra, services and observability |
+| `bootstrap/root-local.yaml`, `apps-local/` | the same for a local k3d cluster, plus observability |
 | `platform/` | cluster-wide resources (Let's Encrypt issuer) |
 | `platform-local/` | the local cluster's issuer (`local-ca`, signing with the machine's CA) |
 | `platform-k3s/` | Traefik's Gateway API provider, both envs |
+| `platform-secrets/` | the `openbao` ClusterSecretStore, both envs |
 | `envs/prod/*-values.yaml` | prod overrides for the app repo charts |
 | `envs/local/*-values.yaml` | local overrides, layered on top of prod's |
-| `envs/prod/secrets/` | SealedSecrets, safe to commit |
-| `sealed-secrets/pub-cert.pem` | public cert for sealing |
+| `envs/prod/openbao-values.yaml` | OpenBao, both envs: static seal, self-init (kv mount, auth, secrets) |
+| `envs/local/openbao-seed.env` | local dev secret values, public on purpose |
 
-Sync order (waves): sealed-secrets, cert-manager -> issuer, secrets -> infra -> services.
+Sync order (waves): cert-manager, OpenBao, External Secrets -> issuer, secret store, Traefik -> infra -> services.
 
 ## Bootstrap
 
@@ -42,11 +43,13 @@ Target: one Oracle Cloud Always Free Ampere A1 VM (4 OCPU, 24 GB, Ubuntu 24.04 a
    ```sh
    curl -sfL https://get.k3s.io | sh -
    ```
-3. Sealing key, before anything syncs (otherwise the controller generates its own and existing secrets won't decrypt):
+3. OpenBao's unseal key and the first-start secret values, before anything syncs. Keep `openbao-unseal.key` offline: without it the data can't be unsealed. The seed file has the keys of `envs/local/openbao-seed.env` with real values:
    ```sh
-   kubectl -n kube-system create secret tls sealed-secrets-key --cert=tls.crt --key=tls.key
-   kubectl -n kube-system label secret sealed-secrets-key sealedsecrets.bitnami.com/sealed-secrets-key=active
+   kubectl create namespace openbao
+   kubectl -n openbao create secret generic openbao-unseal --from-file=key=openbao-unseal.key   # openssl rand -out openbao-unseal.key 32
+   kubectl -n openbao create secret generic openbao-seed --from-env-file=prod-secrets.env
    ```
+   OpenBao configures itself from the seed on its first start (`envs/prod/openbao-values.yaml`); delete `openbao-seed` once `openbao-0` is ready.
 4. Argo CD and the root app:
    ```sh
    kubectl create namespace argocd
@@ -57,23 +60,28 @@ Target: one Oracle Cloud Always Free Ampere A1 VM (4 OCPU, 24 GB, Ubuntu 24.04 a
 
 Argo CD UI (not exposed publicly):
 ```sh
-kubectl -n argocd port-forward svc/argocd-server 8443:443
+kubectl -n argocd port-forward svc/argocd-server 9443:443
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
 ```
 
 ## Secrets
 
+Values live in OpenBao (kv v2 mount `dsn`: `postgres`, `minio`, `keycloak-admin`, `grafana-admin`). External Secrets reads them through the `openbao` ClusterSecretStore (Kubernetes auth, read-only policy) and the charts' `ExternalSecret`s build the Secrets the pods use, e.g. `DATABASE_URL` from `postgres`. Nothing secret is in git except the public local dev values.
+
+Changing a value (the `admin` login is created by self-init from `BAO_ADMIN_PASSWORD`):
 ```sh
-kubectl create secret generic <name> -n dsn --from-literal=KEY=value --dry-run=client -o yaml \
-  | kubeseal --cert sealed-secrets/pub-cert.pem --format yaml > envs/prod/secrets/<name>.yaml
+kubectl -n openbao exec -it openbao-0 -- sh -c 'bao login -method=userpass username=admin && bao kv patch dsn/minio password=...'
 ```
+External Secrets picks it up within an hour (`refreshInterval`). It only changes the Secret: rotating a password the data store already uses (Postgres, MinIO) also needs the store updated.
+
+Self-init runs once, on empty storage. If it fails (e.g. a missing seed key), fix the seed, delete the `data-openbao-0` PVC and the pod.
 
 ## Local cluster
 
 A k3d cluster synced from this repo, running the same commit as prod:
 ```sh
 make cluster-up     # in the app repo: k3d, Argo CD, bootstrap/root-local.yaml
-make forward        # compose's localhost ports + Argo CD on https://localhost:8443
+make forward        # compose's localhost ports + Argo CD on https://localhost:9443
 make cluster-down
 ```
-`apps-local/` deploys cert-manager, infra, services and observability (Grafana, Prometheus, Loki, Jaeger, Redpanda Console on `https://<name>.localhost:8443`), with `envs/local` values on top of `envs/prod`: plain dev secrets instead of SealedSecrets (no sealing key needed), and certificates from the `local-ca` issuer instead of Let's Encrypt. `make cluster-up` loads that CA (generated once per machine in `~/.config/dsn/`) as the `dsn-local-ca` secret, like the sealing key in prod. The publish workflow bumps `apps-local/` along with `apps/`. The app is served on https://localhost:8443; http://localhost:8081 redirects.
+`apps-local/` deploys cert-manager, infra, services and observability (Grafana, Prometheus, Loki, Jaeger, Redpanda Console on `https://<name>.localhost:8443`), with `envs/local` values on top of `envs/prod`: certificates from the `local-ca` issuer instead of Let's Encrypt. `make cluster-up` does prod's bootstrap step 3 with local inputs: the machine's CA (generated once in `~/.config/dsn/`) as `dsn-local-ca`, a fresh OpenBao unseal key, and `envs/local/openbao-seed.env` as the seed. Secrets then flow exactly as in prod. The publish workflow bumps `apps-local/` along with `apps/`. The app is served on https://localhost:8443; http://localhost:8081 redirects.
