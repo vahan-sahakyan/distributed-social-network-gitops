@@ -6,4 +6,4 @@ tools: false # redpanda console, and kibana when search is on
 search: false # elasticsearch + search-service
 events: false # clickhouse + event-writer + cache-rebuilder
 # app repo commit the charts come from; the publish workflow pins it on every main build
-appRevision: fde6abcc41eb95b17dfadaf3370bf7dc6b084423
+appRevision: f994cc84ad23719615cf6909cd4957983b9e76e6
