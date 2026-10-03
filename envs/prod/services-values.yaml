@@ -1,6 +1,6 @@
 image:
   # app repo commit, bumped by its publish workflow
-  tag: 0dfad884f0a5b15612be32ccff91148fc380f75d
+  tag: 805a985480e215c449c51d3c5095bb2be52773ee
 route:
   # set to the public hostname, then enable tls once DNS points at the node
   host: ""
