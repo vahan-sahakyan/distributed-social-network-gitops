@@ -1,0 +1,150 @@
+# single OpenBao for both envs. Bootstrap provides two secrets in the openbao namespace:
+#   openbao-unseal  key: 32 random bytes, the static seal key (unseals on every start)
+#   openbao-seed    one key per value below, read once by the first start (optional afterwards)
+injector:
+  enabled: false
+
+server:
+  resources:
+    requests: {cpu: 20m, memory: 64Mi}
+    limits: {memory: 256Mi}
+  dataStorage:
+    size: 1Gi
+  volumes:
+    - name: unseal
+      secret:
+        secretName: openbao-unseal
+    - name: seed
+      secret:
+        secretName: openbao-seed
+        optional: true
+  volumeMounts:
+    - name: unseal
+      mountPath: /openbao/unseal
+      readOnly: true
+    - name: seed
+      mountPath: /openbao/seed
+      readOnly: true
+  standalone:
+    enabled: true
+    # self-init runs once, on empty storage: kv mount, kubernetes auth for External
+    # Secrets, an admin login, and the app's secrets from openbao-seed
+    config: |
+      ui = false
+
+      listener "tcp" {
+        tls_disable = 1
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+
+      storage "pebbledb" {
+        path = "/openbao/data/pebbledb"
+      }
+
+      seal "static" {
+        current_key_id = "1"
+        current_key = "file:///openbao/unseal/key"
+      }
+
+      initialize "mounts" {
+        request "kv" {
+          operation = "update"
+          path = "sys/mounts/dsn"
+          data = {
+            type = "kv"
+            options = { version = "2" }
+          }
+        }
+      }
+
+      initialize "auth" {
+        request "external-secrets-policy" {
+          operation = "update"
+          path = "sys/policies/acl/external-secrets"
+          data = { policy = "path \"dsn/data/*\" { capabilities = [\"read\"] }" }
+        }
+        request "kubernetes" {
+          operation = "update"
+          path = "sys/auth/kubernetes"
+          data = { type = "kubernetes" }
+        }
+        request "kubernetes-config" {
+          operation = "update"
+          path = "auth/kubernetes/config"
+          data = { kubernetes_host = "https://kubernetes.default.svc" }
+        }
+        request "external-secrets-role" {
+          operation = "update"
+          path = "auth/kubernetes/role/external-secrets"
+          data = {
+            bound_service_account_names = ["external-secrets"]
+            bound_service_account_namespaces = ["external-secrets"]
+            token_policies = ["external-secrets"]
+            token_ttl = "1h"
+          }
+        }
+        # no root token survives self-init; this login administers OpenBao afterwards
+        request "admin-policy" {
+          operation = "update"
+          path = "sys/policies/acl/admin"
+          data = { policy = "path \"*\" { capabilities = [\"create\", \"read\", \"update\", \"patch\", \"delete\", \"list\", \"sudo\"] }" }
+        }
+        request "userpass" {
+          operation = "update"
+          path = "sys/auth/userpass"
+          data = { type = "userpass" }
+        }
+        request "admin" {
+          operation = "update"
+          path = "auth/userpass/users/admin"
+          data = {
+            password = { eval_type = "string", eval_source = "file", path = "/openbao/seed/BAO_ADMIN_PASSWORD", require_present = true }
+            token_policies = ["admin"]
+          }
+        }
+      }
+
+      initialize "secrets" {
+        request "postgres" {
+          operation = "update"
+          path = "dsn/data/postgres"
+          data = {
+            data = {
+              password = { eval_type = "string", eval_source = "file", path = "/openbao/seed/POSTGRES_PASSWORD", require_present = true }
+            }
+          }
+        }
+        request "minio" {
+          operation = "update"
+          path = "dsn/data/minio"
+          data = {
+            data = {
+              user = { eval_type = "string", eval_source = "file", path = "/openbao/seed/MINIO_ROOT_USER", require_present = true }
+              password = { eval_type = "string", eval_source = "file", path = "/openbao/seed/MINIO_ROOT_PASSWORD", require_present = true }
+            }
+          }
+        }
+        request "keycloak-admin" {
+          operation = "update"
+          path = "dsn/data/keycloak-admin"
+          data = {
+            data = {
+              user = { eval_type = "string", eval_source = "file", path = "/openbao/seed/KEYCLOAK_ADMIN", require_present = true }
+              password = { eval_type = "string", eval_source = "file", path = "/openbao/seed/KEYCLOAK_ADMIN_PASSWORD", require_present = true }
+            }
+          }
+        }
+        # read by the observability chart; a missing seed file fails init (allow_failure
+        # doesn't cover evaluation), so every env seeds it
+        request "grafana-admin" {
+          operation = "update"
+          path = "dsn/data/grafana-admin"
+          data = {
+            data = {
+              user = { eval_type = "string", eval_source = "file", path = "/openbao/seed/GRAFANA_ADMIN_USER", require_present = true }
+              password = { eval_type = "string", eval_source = "file", path = "/openbao/seed/GRAFANA_ADMIN_PASSWORD", require_present = true }
+            }
+          }
+        }
+      }

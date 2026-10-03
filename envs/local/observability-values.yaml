@@ -1,4 +1,4 @@
-# chart defaults fit local: plain grafana admin/admin, UIs on <name>.localhost:8081
+# chart defaults fit local: UIs on <name>.localhost
 kibana:
   # ~1GB, Dev Tools for the search indices
   enabled: true
