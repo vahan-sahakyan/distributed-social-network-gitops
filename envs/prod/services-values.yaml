@@ -3,7 +3,9 @@ image:
   tag: 95cc26b37b98952011f19c081fb3a6f0f9cbcbb4
 # credentials come from envs/prod/secrets
 createDevSecrets: false
-ingress:
+route:
   # set to the public hostname, then enable tls once DNS points at the node
   host: ""
   tls: false
+# https://<host> once it is set; the gateway checks the token issuer against it
+publicUrl: ""
