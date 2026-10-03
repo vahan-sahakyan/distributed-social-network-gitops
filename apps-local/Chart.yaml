@@ -1,0 +1,4 @@
+apiVersion: v2
+name: apps-local
+description: Argo CD apps of the local k3d cluster, with switches for the optional groups
+version: 0.1.0

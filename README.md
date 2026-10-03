@@ -19,7 +19,7 @@ Rollback = `git revert` the deploy commit.
 |---|---|
 | `bootstrap/root.yaml` | app of apps, the only manifest applied by hand |
 | `apps/` | one Argo CD Application per component |
-| `bootstrap/root-local.yaml`, `apps-local/` | the same for a local k3d cluster, plus observability |
+| `bootstrap/root-local.yaml`, `apps-local/` | the same for a local k3d cluster; `apps-local/` is a Helm chart with switches for the optional groups |
 | `platform/` | cluster-wide resources (Let's Encrypt issuer) |
 | `platform-local/` | the local cluster's issuer (`local-ca`, signing with the machine's CA) |
 | `platform-k3s/` | Traefik's Gateway API provider, both envs |
@@ -80,8 +80,9 @@ Self-init runs once, on empty storage. If it fails (e.g. a missing seed key), fi
 
 A k3d cluster synced from this repo, running the same commit as prod:
 ```sh
-make cluster-up     # in the app repo: k3d, Argo CD, bootstrap/root-local.yaml
+make cluster-up     # in the app repo: k3d, Argo CD, bootstrap/root-local.yaml; group flags e.g. OBS=1
+make cluster-profile SEARCH=1   # switch optional groups on a running cluster, no commit
 make forward        # compose's localhost ports + Argo CD on https://localhost:9443
 make cluster-down
 ```
-`apps-local/` deploys cert-manager, infra, services and observability (Grafana, Prometheus, Loki, Jaeger, Redpanda Console on `https://<name>.localhost:8443`), with `envs/local` values on top of `envs/prod`: certificates from the `local-ca` issuer instead of Let's Encrypt. `make cluster-up` does prod's bootstrap step 3 with local inputs: the machine's CA (generated once in `~/.config/dsn/`) as `dsn-local-ca`, a fresh OpenBao unseal key, and `envs/local/openbao-seed.env` as the seed. Secrets then flow exactly as in prod. The publish workflow bumps `apps-local/` along with `apps/`. The app is served on https://localhost:8443; http://localhost:8081 redirects.
+`apps-local/` is a Helm chart: it deploys cert-manager, infra and services, plus the optional groups its switches turn on (`values.yaml`: `obs`, `tools`, `search`, `events`, all off by default; `make cluster-up`/`cluster-profile` set them on the `root-local` app, so toggling needs no commit). The observability app (Grafana, Prometheus, Loki, Jaeger, Redpanda Console, Kibana on `https://<name>.localhost:8443`) exists only while `obs` or `tools` is on. Values: `envs/local` on top of `envs/prod`, with certificates from the `local-ca` issuer instead of Let's Encrypt. `make cluster-up` does prod's bootstrap step 3 with local inputs: the machine's CA (generated once in `~/.config/dsn/`) as `dsn-local-ca`, a fresh OpenBao unseal key, and `envs/local/openbao-seed.env` as the seed. Secrets then flow exactly as in prod. The publish workflow pins `apps-local/values.yaml` `appRevision` along with `apps/`. The app is served on https://localhost:8443; http://localhost:8081 redirects.

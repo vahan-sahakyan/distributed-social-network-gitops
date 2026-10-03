@@ -17,9 +17,6 @@ route:
   httpsPort: 8443
 publicUrl: https://localhost:8443
 
-# traces to the jaeger from the observability app
-otelEndpoint: http://jaeger:4318
-
 services:
   gateway:
     env:

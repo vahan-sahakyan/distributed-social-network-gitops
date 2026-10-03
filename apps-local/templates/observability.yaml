@@ -1,8 +1,12 @@
+{{- if or .Values.obs .Values.tools }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: observability
   namespace: argocd
+  # switching obs and tools off deletes the app, and with it what it deployed
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd.argoproj.io/sync-wave: "0"
     argocd.argoproj.io/compare-options: ServerSideDiff=true
@@ -11,11 +15,15 @@ spec:
   sources:
     # local only for now; CI pins it to each main commit like the other apps
     - repoURL: https://github.com/vahan-sahakyan/distributed-social-network.git
-      targetRevision: 805a985480e215c449c51d3c5095bb2be52773ee
+      targetRevision: {{ .Values.appRevision }}
       path: deploy/kubernetes/observability
       helm:
         valueFiles:
           - $values/envs/local/observability-values.yaml
+        valuesObject:
+          stack: {enabled: {{ .Values.obs }}}
+          redpandaConsole: {enabled: {{ .Values.tools }}}
+          kibana: {enabled: {{ and .Values.tools .Values.search }}}
     - repoURL: https://github.com/vahan-sahakyan/distributed-social-network-gitops.git
       targetRevision: main
       ref: values
@@ -35,3 +43,4 @@ spec:
         duration: 10s
         factor: 2
         maxDuration: 3m
+{{- end }}

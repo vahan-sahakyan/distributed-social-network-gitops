@@ -1,22 +1,28 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: infra
+  name: services
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/compare-options: ServerSideDiff=true
 spec:
   project: default
   sources:
     # same app repo commit as prod, CI bumps both; local values layer on top of prod's
     - repoURL: https://github.com/vahan-sahakyan/distributed-social-network.git
-      targetRevision: 805a985480e215c449c51d3c5095bb2be52773ee
-      path: deploy/kubernetes/infra
+      targetRevision: {{ .Values.appRevision }}
+      path: deploy/kubernetes/services
       helm:
         valueFiles:
-          - $values/envs/prod/infra-values.yaml
-          - $values/envs/local/infra-values.yaml
+          - $values/envs/prod/services-values.yaml
+          - $values/envs/local/services-values.yaml
+        valuesObject:
+          otelEndpoint: {{ ternary "http://jaeger:4318" "" .Values.obs | quote }}
+          services:
+            search: {enabled: {{ .Values.search }}}
+            event-writer: {enabled: {{ .Values.events }}}
+            cache-rebuilder: {enabled: {{ .Values.events }}}
     - repoURL: https://github.com/vahan-sahakyan/distributed-social-network-gitops.git
       targetRevision: main
       ref: values
