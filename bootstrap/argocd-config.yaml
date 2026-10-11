@@ -14,8 +14,9 @@ data:
   # Argo CD has no health check for Applications since 1.8, so the root app's sync waves
   # only order creation: infra synced before the external-secrets webhook had endpoints and
   # its ExternalSecrets were rejected. With this, a wave waits for the apps before it to be healthy
-  # (the check from the Argo CD docs, plus: a new app reports Healthy before its first sync
-  # has applied anything, so it counts as Progressing until a sync has finished)
+  # (the check from the Argo CD docs, plus: an app reports its old health until it has been
+  # reassessed after a sync, e.g. Healthy before its first sync applied anything, so it counts
+  # as Progressing until a sync has finished and a later reconcile has looked at the result)
   resource.customizations.health.argoproj.io_Application: |
     hs = {}
     hs.status = "Progressing"
@@ -26,6 +27,11 @@ data:
     local op = obj.status.operationState
     if op == nil or op.phase == "Running" or op.phase == "Terminating" then
       hs.message = "waiting for a sync to finish"
+      return hs
+    end
+    -- RFC 3339 UTC timestamps compare as strings; same second still counts as stale
+    if obj.status.reconciledAt == nil or op.finishedAt == nil or obj.status.reconciledAt <= op.finishedAt then
+      hs.message = "waiting for health after the sync"
       return hs
     end
     hs.status = obj.status.health.status
