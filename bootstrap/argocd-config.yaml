@@ -1,0 +1,42 @@
+# Argo CD settings on top of its install manifest, applied by hand right after it:
+#   kubectl apply --server-side --field-manager=dsn-bootstrap -f bootstrap/argocd-config.yaml
+#   kubectl -n argocd rollout restart statefulset/argocd-application-controller
+# its own field manager keeps the install's keys in these ConfigMaps
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Argo CD has no health check for Applications since 1.8, so the root app's sync waves
+  # only order creation: infra synced before the external-secrets webhook had endpoints and
+  # its ExternalSecrets were rejected. With this, a wave waits for the apps before it to be healthy
+  resource.customizations.health.argoproj.io_Application: |
+    hs = {}
+    hs.status = "Progressing"
+    hs.message = ""
+    if obj.status ~= nil then
+      if obj.status.health ~= nil then
+        hs.status = obj.status.health.status
+        if obj.status.health.message ~= nil then
+          hs.message = obj.status.health.message
+        end
+      end
+    end
+    return hs
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cmd-params-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # a sync waiting on an app that stays degraded would run forever and hold back newer
+  # changes (e.g. root-local's group switches); 20 minutes covers a cold start
+  controller.sync.timeout.seconds: "1200"
