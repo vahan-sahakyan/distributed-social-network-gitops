@@ -33,15 +33,12 @@ Sync order (waves): cert-manager, OpenBao, External Secrets -> issuer, secret st
 
 ## Bootstrap
 
-Target: one Oracle Cloud Always Free Ampere A1 VM (4 OCPU, 24 GB, Ubuntu 24.04 aarch64).
+Target: one AWS EC2 `m7i-flex.large` (2 vCPU, 8 GB, x86, Amazon Linux 2023), made by `deploy/aws` in the app repo; its `bootstrap.sh` runs steps 2-5. Prod runs search but not the events group (`envs/prod`), to fit 2 vCPU.
 
-1. Open 80/443 in the VCN security list, and on the VM:
+1. Open 22 (your address only), 80 and 443 to the node (`deploy/aws` does it with a security group).
+2. k3s, pinned (the channel lookup isn't reliably reachable from EC2); its Traefik and servicelb serve 80/443:
    ```sh
-   sudo iptables -I INPUT 6 -p tcp -m multiport --dports 80,443 -j ACCEPT && sudo netfilter-persistent save
-   ```
-2. k3s:
-   ```sh
-   curl -sfL https://get.k3s.io | sh -
+   curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.33.6+k3s1 INSTALL_K3S_SKIP_SELINUX_RPM=true sh -
    ```
 3. OpenBao's unseal key and the first-start secret values, before anything syncs. Keep `openbao-unseal.key` offline: without it the data can't be unsealed. The seed file has the keys of `envs/local/openbao-seed.env` with real values:
    ```sh
@@ -56,7 +53,7 @@ Target: one Oracle Cloud Always Free Ampere A1 VM (4 OCPU, 24 GB, Ubuntu 24.04 a
    kubectl apply -n argocd --server-side -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.3/manifests/install.yaml
    kubectl apply -f bootstrap/root.yaml
    ```
-5. DNS: point a hostname at the VM, set `route.host`, `route.tls: true` and `publicUrl` in `envs/prod/services-values.yaml`; cert-manager issues the certificate through the `dsn` Gateway.
+5. TLS: prod answers on the node's bare public IP, which changes on stop/start, so nothing in git holds it: the https listener serves a `dsn-tls` secret in `dsn` (self-signed for the current IP, remade at boot by `deploy/aws`), login redirects are relative (`keycloak.uiUrl: /`) and `publicUrl` stays empty. With a domain instead: point it at the node, set `route.host`, `route.certificate: true`, `publicUrl` and `keycloak.uiUrl`; cert-manager then issues a Let's Encrypt certificate through the `dsn` Gateway.
 
 Argo CD UI (not exposed publicly):
 ```sh

@@ -5,6 +5,7 @@
 route:
   host: localhost
   tls: true
+  certificate: true
   clusterIssuer: local-ca
   # the observability UIs (kibana included); TLS clients reject a *.localhost wildcard
   extraHosts:

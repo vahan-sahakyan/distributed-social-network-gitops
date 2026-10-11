@@ -2,8 +2,14 @@ image:
   # app repo commit, bumped by its publish workflow
   tag: 9886e2a96df1939dfde46ed89bb772eace357fb2
 route:
-  # set to the public hostname, then enable tls once DNS points at the node
+  # bare public IP, no domain: https on any host with the self-signed dsn-tls secret the
+  # node makes for its current IP at boot. With a domain: host, certificate: true, publicUrl
   host: ""
-  tls: false
-# https://<host> once it is set; the gateway checks the token issuer against it
+  tls: true
+  certificate: false
+# empty leaves the token issuer unchecked, since the IP changes on restart
 publicUrl: ""
+# one 2 vCPU node (AWS m7i-flex.large): the events group stays off
+services:
+  event-writer: {enabled: false}
+  cache-rebuilder: {enabled: false}
