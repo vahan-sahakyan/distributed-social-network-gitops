@@ -9,7 +9,3 @@ route:
   certificate: false
 # empty leaves the token issuer unchecked, since the IP changes on restart
 publicUrl: ""
-# one 2 vCPU node (AWS m7i-flex.large): the events group stays off
-services:
-  event-writer: {enabled: false}
-  cache-rebuilder: {enabled: false}

@@ -34,7 +34,7 @@ Sync order (waves): cert-manager, OpenBao, External Secrets -> issuer, secret st
 
 ## Bootstrap
 
-Target: one AWS EC2 `m7i-flex.large` (2 vCPU, 8 GB, x86, Amazon Linux 2023), made by `deploy/aws` in the app repo; its `bootstrap.sh` runs steps 2-5. Prod runs search but not the events group (`envs/prod`), to fit 2 vCPU.
+Target: one AWS EC2 `m7i-flex.large` (2 vCPU, 8 GB, x86, Amazon Linux 2023), made by `deploy/aws` in the app repo; its `bootstrap.sh` runs steps 2-5. Prod runs search and the events group (the feed's event store, ClickHouse capped at 1.5Gi in `envs/prod`); not obs or tools.
 
 1. Open 22 (your address only), 80 and 443 to the node (`deploy/aws` does it with a security group).
 2. k3s, pinned (the channel lookup isn't reliably reachable from EC2); its Traefik and servicelb serve 80/443:
