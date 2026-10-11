@@ -17,7 +17,8 @@ Rollback = `git revert` the deploy commit.
 
 | Path | Contents |
 |---|---|
-| `bootstrap/root.yaml` | app of apps, the only manifest applied by hand |
+| `bootstrap/root.yaml` | app of apps, applied by hand |
+| `bootstrap/argocd-config.yaml` | Argo CD settings over its install manifest (Application health, sync timeout), applied by hand, both envs |
 | `apps/` | one Argo CD Application per component |
 | `bootstrap/root-local.yaml`, `apps-local/` | the same for a local k3d cluster; `apps-local/` is a Helm chart with switches for the optional groups |
 | `platform/` | cluster-wide resources (Let's Encrypt issuer) |
@@ -51,8 +52,11 @@ Target: one AWS EC2 `m7i-flex.large` (2 vCPU, 8 GB, x86, Amazon Linux 2023), mad
    ```sh
    kubectl create namespace argocd
    kubectl apply -n argocd --server-side -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.3/manifests/install.yaml
+   kubectl apply --server-side --field-manager=dsn-bootstrap -f bootstrap/argocd-config.yaml
+   kubectl -n argocd rollout restart statefulset/argocd-application-controller
    kubectl apply -f bootstrap/root.yaml
    ```
+   `argocd-config.yaml` makes the root app's sync waves wait for the apps before them to be healthy (Argo CD has no Application health check by default), and times out syncs stuck on a degraded app after 20 minutes.
 5. TLS: prod answers on the node's bare public IP, which changes on stop/start, so nothing in git holds it: the https listener serves a `dsn-tls` secret in `dsn` (self-signed for the current IP, remade at boot by `deploy/aws`), login redirects are relative (`keycloak.uiUrl: /`) and `publicUrl` stays empty. With a domain instead: point it at the node, set `route.host`, `route.certificate: true`, `publicUrl` and `keycloak.uiUrl`; cert-manager then issues a Let's Encrypt certificate through the `dsn` Gateway.
 
 Argo CD UI (not exposed publicly):

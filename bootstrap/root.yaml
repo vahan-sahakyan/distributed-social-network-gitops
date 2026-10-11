@@ -17,3 +17,10 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    # a sync that failed or timed out is retried; auto-sync alone skips a revision it already tried
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

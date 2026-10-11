@@ -1,0 +1,54 @@
+# Argo CD settings on top of its install manifest, applied by hand right after it:
+#   kubectl apply --server-side --field-manager=dsn-bootstrap -f bootstrap/argocd-config.yaml
+#   kubectl -n argocd rollout restart statefulset/argocd-application-controller
+# its own field manager keeps the install's keys in these ConfigMaps
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Argo CD has no health check for Applications since 1.8, so the root app's sync waves
+  # only order creation: infra synced before the external-secrets webhook had endpoints and
+  # its ExternalSecrets were rejected. With this, a wave waits for the apps before it to be healthy
+  # (the check from the Argo CD docs, plus: an app reports its old health until it has been
+  # reassessed after a sync, e.g. Healthy before its first sync applied anything, so it counts
+  # as Progressing until a sync has finished and a later reconcile has looked at the result)
+  resource.customizations.health.argoproj.io_Application: |
+    hs = {}
+    hs.status = "Progressing"
+    hs.message = ""
+    if obj.status == nil or obj.status.health == nil then
+      return hs
+    end
+    local op = obj.status.operationState
+    if op == nil or op.phase == "Running" or op.phase == "Terminating" then
+      hs.message = "waiting for a sync to finish"
+      return hs
+    end
+    -- RFC 3339 UTC timestamps compare as strings; same second still counts as stale
+    if obj.status.reconciledAt == nil or op.finishedAt == nil or obj.status.reconciledAt <= op.finishedAt then
+      hs.message = "waiting for health after the sync"
+      return hs
+    end
+    hs.status = obj.status.health.status
+    if obj.status.health.message ~= nil then
+      hs.message = obj.status.health.message
+    end
+    return hs
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cmd-params-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # a sync waiting on an app that stays degraded would run forever and hold back newer
+  # changes (e.g. root-local's group switches); 20 minutes covers a cold start
+  controller.sync.timeout.seconds: "1200"
