@@ -1,6 +1,6 @@
 image:
   # app repo commit, bumped by its publish workflow
-  tag: 4312ddee0516b1caf299bdf95af82c63a6fe8d68
+  tag: 89bd29d8d1ea6d68b6994fc1e5588de19e297ff9
 route:
   # bare public IP, no domain: https on any host with the self-signed dsn-tls secret the
   # node makes for its current IP at boot. With a domain: host, certificate: true, publicUrl
