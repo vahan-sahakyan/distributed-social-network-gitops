@@ -1,3 +1,7 @@
 # layered on envs/prod/infra-values.yaml
 keycloak:
   uiUrl: https://localhost:8443
+# the chart's limit; prod caps it for a smaller node
+clickhouse:
+  resources:
+    limits: {memory: 3Gi}

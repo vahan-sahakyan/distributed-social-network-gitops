@@ -3,10 +3,13 @@ postgres:
   storage: 2Gi
 scylla:
   storage: 5Gi
-# one 2 vCPU node (AWS m7i-flex.large): the events group stays off
+# the feed's event store: cache-rebuilder refills Valkey (1h TTL, no volume) from it.
+# ClickHouse sizes itself from its memory limit; 1.5Gi keeps the 8 GB node clear
 clickhouse:
-  enabled: false
   storage: 10Gi
+  resources:
+    requests: {cpu: 100m, memory: 1Gi}
+    limits: {memory: 1536Mi}
 minio:
   storage: 20Gi
 keycloak:
