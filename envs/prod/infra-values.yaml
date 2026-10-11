@@ -3,7 +3,12 @@ postgres:
   storage: 2Gi
 scylla:
   storage: 5Gi
+# one 2 vCPU node (AWS m7i-flex.large): the events group stays off
 clickhouse:
+  enabled: false
   storage: 10Gi
 minio:
   storage: 20Gi
+keycloak:
+  # bare public IP that changes on restart: login redirects are relative, valid on any origin
+  uiUrl: /
