@@ -19,6 +19,7 @@ spec:
           - $values/envs/local/services-values.yaml
         valuesObject:
           otelEndpoint: {{ ternary "http://alloy:4318" "" .Values.obs | quote }}
+          serviceMonitor: {enabled: {{ .Values.obs }}}
           services:
             search: {enabled: {{ .Values.search }}}
             event-writer: {enabled: {{ .Values.events }}}

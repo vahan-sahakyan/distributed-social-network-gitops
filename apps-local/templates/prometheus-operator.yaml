@@ -1,0 +1,74 @@
+# Prometheus Operator CRDs, always: charts render ServiceMonitors as soon as obs is on
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-operator-crds
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: prometheus-operator-crds
+    targetRevision: 32.0.1
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+{{- if .Values.obs }}
+---
+# the operator alone, watching dsn; the observability chart brings Prometheus and Alertmanager
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-operator
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 92.9.0
+    helm:
+      valuesObject:
+        crds: {enabled: false}
+        defaultRules: {create: false}
+        alertmanager: {enabled: false}
+        grafana: {enabled: false}
+        prometheus: {enabled: false}
+        kubernetesServiceMonitors: {enabled: false}
+        kubeStateMetrics: {enabled: false}
+        nodeExporter: {enabled: false}
+        prometheusOperator:
+          admissionWebhooks: {enabled: false}
+          tls: {enabled: false}
+          kubeletService: {enabled: false}
+          serviceMonitor: {selfMonitor: false}
+          namespaces:
+            releaseNamespace: false
+            additional: [dsn]
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 128Mi}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+{{- end }}

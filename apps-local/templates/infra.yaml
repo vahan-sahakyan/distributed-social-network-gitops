@@ -20,6 +20,7 @@ spec:
         valuesObject:
           elasticsearch: {enabled: {{ .Values.search }}}
           clickhouse: {enabled: {{ .Values.events }}}
+          serviceMonitor: {enabled: {{ .Values.obs }}}
     - repoURL: https://github.com/vahan-sahakyan/distributed-social-network-gitops.git
       targetRevision: main
       ref: values
