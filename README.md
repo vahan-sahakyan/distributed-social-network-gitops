@@ -30,7 +30,7 @@ Rollback = `git revert` the deploy commit.
 | `envs/prod/openbao-values.yaml` | OpenBao, both envs: static seal, self-init (kv mount, auth, secrets) |
 | `envs/local/openbao-seed.env` | local dev secret values, public on purpose |
 
-Sync order (waves): cert-manager, OpenBao, External Secrets -> issuer, secret store, Traefik -> infra -> services -> observability (on k3d, its routes need the services chart's Gateway).
+Sync order (waves): cert-manager, OpenBao, External Secrets, CloudNativePG -> issuer, secret store, Traefik, the Barman Cloud plugin -> infra -> services -> observability (on k3d, its routes need the services chart's Gateway).
 
 ## Bootstrap
 
