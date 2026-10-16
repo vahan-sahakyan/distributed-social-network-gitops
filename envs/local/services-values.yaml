@@ -11,6 +11,8 @@ route:
   extraHosts:
     - grafana.localhost
     - prometheus.localhost
+    - alertmanager.localhost
+    - mailpit.localhost
     - redpanda.localhost
     - minio.localhost
     - kibana.localhost
