@@ -18,7 +18,7 @@ spec:
           - $values/envs/prod/services-values.yaml
           - $values/envs/local/services-values.yaml
         valuesObject:
-          otelEndpoint: {{ ternary "http://jaeger:4318" "" .Values.obs | quote }}
+          otelEndpoint: {{ ternary "http://alloy:4318" "" .Values.obs | quote }}
           services:
             search: {enabled: {{ .Values.search }}}
             event-writer: {enabled: {{ .Values.events }}}
