@@ -8,7 +8,8 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    # after services: its HTTPRoutes are healthy only once the services chart's Gateway exists
+    argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/compare-options: ServerSideDiff=true
 spec:
   project: default
